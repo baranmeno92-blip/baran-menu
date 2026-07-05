@@ -8,56 +8,111 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body class="bg-zinc-950 text-white">
-  <div class="max-w-2xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold">پنل مدیریت کافه باران</h1>
-      <a href="index.html" class="text-amber-400 hover:underline">← منوی مشتری</a>
-    </div>
-
-    <div class="bg-zinc-900 rounded-3xl p-6 mb-8">
-      <label class="block mb-2">GitHub Token</label>
-      <input type="password" id="githubToken" placeholder="ghp_..." class="w-full bg-zinc-800 p-4 rounded-2xl">
-      <p class="text-xs text-zinc-500 mt-2">⚠️ فقط در مرورگر شما ذخیره می‌شود. لینک این صفحه را به اشتراک نگذارید.</p>
-    </div>
-
-    <!-- فرم افزودن/ویرایش -->
-    <div class="bg-zinc-900 rounded-3xl p-6 mb-10">
-      <h2 class="text-xl mb-6">افزودن / ویرایش آیتم</h2>
-      <form id="itemForm">
-        <input type="hidden" id="editId">
-        <input id="name" placeholder="نام آیتم" class="w-full bg-zinc-800 p-4 rounded-2xl mb-4" required>
-        
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <input id="price" placeholder="قیمت (تومان یا -)" class="bg-zinc-800 p-4 rounded-2xl" required>
-          <input id="category" placeholder="دسته‌بندی" class="bg-zinc-800 p-4 rounded-2xl" required>
-        </div>
-        
-        <input id="desc" placeholder="توضیحات (اختیاری)" class="w-full bg-zinc-800 p-4 rounded-2xl mb-4">
-
-        <div class="mb-6">
-          <label class="block text-sm mb-2">عکس آیتم</label>
-          <input type="file" id="imageFile" accept="image/*" class="block w-full text-sm text-zinc-300 file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:bg-amber-600 file:text-white">
-          <div id="preview" class="hidden mt-4">
-            <img id="previewImg" class="max-h-52 rounded-3xl">
-          </div>
-        </div>
-        
-        <button type="submit" class="w-full bg-green-600 py-4 rounded-3xl font-medium">ذخیره</button>
-      </form>
-    </div>
-
-    <div id="status" class="text-center my-6"></div>
-
-    <h2 class="text-xl font-semibold mb-4">آیتم‌های فعلی</h2>
-    <div id="adminList" class="space-y-4"></div>
+<div class="max-w-2xl mx-auto p-6">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">پنل مدیریت کافه باران</h1>
+    <a href="index.html" class="text-amber-400 hover:underline">← منوی مشتری</a>
   </div>
 
+  <div class="bg-zinc-900 rounded-3xl p-6 mb-8">
+    <label class="block mb-2">GitHub Token</label>
+    <input type="password" id="githubToken" placeholder="ghp_..." class="w-full bg-zinc-800 p-4 rounded-2xl">
+    <p class="text-xs text-zinc-500 mt-2">⚠️ فقط در مرورگر شما ذخیره می‌شود. لینک این صفحه را به اشتراک نگذارید.</p>
+  </div>
+
+  <!-- پیام‌های خطا / دیباگ -->
+  <div id="loadError" class="hidden bg-red-950 border border-red-700 text-red-300 text-sm p-4 rounded-2xl mb-6"></div>
+
+  <!-- فیلتر دسته -->
+  <div class="mb-6 flex flex-wrap gap-2" id="filterBar"></div>
+
+  <!-- فرم افزودن/ویرایش -->
+  <div class="bg-zinc-900 rounded-3xl p-6 mb-10">
+    <h2 class="text-xl mb-6" id="formTitle">افزودن آیتم جدید</h2>
+    <form id="itemForm">
+      <input type="hidden" id="editId">
+      <input id="name" placeholder="نام آیتم" class="w-full bg-zinc-800 p-4 rounded-2xl mb-4" required>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <input id="price" placeholder="قیمت (تومان یا -)" class="bg-zinc-800 p-4 rounded-2xl" required>
+        <select id="category" class="bg-zinc-800 p-4 rounded-2xl" required></select>
+      </div>
+      <input id="desc" placeholder="توضیحات (اختیاری)" class="w-full bg-zinc-800 p-4 rounded-2xl mb-4">
+      <div class="mb-6">
+        <label class="block text-sm mb-2">عکس آیتم (اختیاری)</label>
+        <input type="file" id="imageFile" accept="image/*" class="block w-full text-sm text-zinc-300 file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:bg-amber-600 file:text-white">
+        <div id="preview" class="hidden mt-4">
+          <img id="previewImg" class="max-h-52 rounded-3xl">
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 bg-green-600 py-4 rounded-3xl font-medium">ذخیره</button>
+        <button type="button" onclick="cancelEdit()" id="cancelBtn" class="hidden bg-zinc-700 px-6 rounded-3xl font-medium">انصراف</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="status" class="text-center my-6"></div>
+
+  <h2 class="text-xl font-semibold mb-4">آیتم‌های فعلی (<span id="itemCount">0</span>)</h2>
+  <div id="adminList" class="space-y-8"></div>
+</div>
+
 <script>
-const OWNER = "baranmeno92-blip";  // تغییر بده به یوزرنیم خودت
-const REPO = "baran-menu";
+const OWNER = "baranmeno92-blip"; // تغییر بده به یوزرنیم خودت
+const REPO = "baran-new";
+
+// دسته‌بندی‌ها باید دقیقاً با index.html هماهنگ باشند
+const CATEGORIES = [
+  { id: "hot-drinks", emoji: "☕", label: "نوشیدنی گرم" },
+  { id: "tea", emoji: "🫖", label: "چای و دمنوش" },
+  { id: "ice-coffee", emoji: "🧊", label: "آیس کافی" },
+  { id: "shake", emoji: "🥤", label: "شیک" },
+  { id: "smoothie", emoji: "🍹", label: "اسموتی" },
+  { id: "mojito", emoji: "🍋", label: "موهیتو و لیموناد" },
+  { id: "cocktail", emoji: "🍸", label: "ماکتیل" },
+  { id: "glass", emoji: "🍨", label: "گلاسه و بستنی" },
+  { id: "cake", emoji: "🍰", label: "کیک" },
+  { id: "food", emoji: "🍕", label: "غذا" },
+];
 
 let menuItems = [];
 let selectedFile = null;
+let activeFilter = 'all';
+const categoryOpenState = {}; // وضعیت باز/بسته‌بودن هر دسته در آکاردئون
+
+function toggleCategory(catId) {
+  categoryOpenState[catId] = !categoryOpenState[catId];
+  renderList();
+}
+
+// از پیش انتخاب‌کردن یک دسته‌بندی هنگام افزودن آیتم مستقیم از داخل آن بخش
+function startAddItemInCategory(catId) {
+  cancelEdit();
+  document.getElementById('category').value = catId;
+  document.getElementById('name').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function catInfo(id) {
+  return CATEGORIES.find(c => c.id === id) || { id, emoji: '☕', label: id };
+}
+
+// ساخت select دسته‌بندی
+const categorySelect = document.getElementById('category');
+categorySelect.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+
+// ساخت نوار فیلتر
+function renderFilterBar() {
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = `<button onclick="setFilter('all')" class="px-4 py-2 rounded-full text-sm ${activeFilter==='all' ? 'bg-amber-600' : 'bg-zinc-800'}">همه</button>` +
+    CATEGORIES.map(c => `<button onclick="setFilter('${c.id}')" class="px-4 py-2 rounded-full text-sm ${activeFilter===c.id ? 'bg-amber-600' : 'bg-zinc-800'}">${c.emoji} ${c.label}</button>`).join('');
+}
+
+function setFilter(id) {
+  activeFilter = id;
+  renderFilterBar();
+  renderList();
+}
 
 document.getElementById('imageFile').addEventListener('change', function(e) {
   selectedFile = e.target.files[0];
@@ -79,8 +134,14 @@ document.getElementById('itemForm').addEventListener('submit', async (e) => {
   const status = document.getElementById('status');
   status.innerHTML = "در حال ذخیره...";
 
-  let imagePath = null;
   const editId = document.getElementById('editId').value;
+  const categoryId = document.getElementById('category').value;
+  let imagePath = null;
+
+  if (editId) {
+    const existing = menuItems.find(i => i.id == editId);
+    if (existing) imagePath = existing.image || null;
+  }
 
   if (selectedFile) {
     const fileName = Date.now() + '-' + selectedFile.name.replace(/\s+/g, '-').toLowerCase();
@@ -89,19 +150,23 @@ document.getElementById('itemForm').addEventListener('submit', async (e) => {
     if (!uploaded) return status.innerHTML = `<span class="text-red-400">خطا در آپلود عکس</span>`;
   }
 
+  // همیشه قبل از ذخیره، آخرین نسخه را از گیت‌هاب بگیر تا رونویسی نشود
   try {
     const res = await fetch(`menu-data.json?t=${Date.now()}`);
-    menuItems = await res.json();
-  } catch (e) { menuItems = []; }
+    if (res.ok) {
+      menuItems = await res.json();
+      if (!Array.isArray(menuItems)) menuItems = [];
+    }
+  } catch (e) { /* اگر نشد، از آخرین لیست حافظه استفاده می‌شود */ }
 
   const newItem = {
     id: editId ? Number(editId) : Date.now(),
     name: document.getElementById('name').value,
     price: document.getElementById('price').value,
-    category: document.getElementById('category').value,
+    category: categoryId,
     desc: document.getElementById('desc').value,
     image: imagePath || null,
-    emoji: "☕"
+    emoji: catInfo(categoryId).emoji
   };
 
   if (editId) {
@@ -113,14 +178,21 @@ document.getElementById('itemForm').addEventListener('submit', async (e) => {
   const saved = await saveMenuData(token);
   if (saved) {
     status.innerHTML = `<span class="text-green-400">✅ ذخیره شد</span>`;
-    e.target.reset();
-    selectedFile = null;
-    document.getElementById('preview').classList.add('hidden');
+    cancelEdit();
     loadData();
   } else {
     status.innerHTML = `<span class="text-red-400">❌ خطا در ذخیره (توکن را چک کنید)</span>`;
   }
 });
+
+function cancelEdit() {
+  document.getElementById('itemForm').reset();
+  document.getElementById('editId').value = '';
+  document.getElementById('formTitle').innerText = 'افزودن آیتم جدید';
+  document.getElementById('cancelBtn').classList.add('hidden');
+  document.getElementById('preview').classList.add('hidden');
+  selectedFile = null;
+}
 
 async function uploadImage(file, fileName, token) {
   const reader = new FileReader();
@@ -156,6 +228,10 @@ async function saveMenuData(token) {
       headers: { Authorization: `token ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ message: "Update menu", content, sha })
     });
+    if (!putRes.ok) {
+      const errBody = await putRes.text();
+      console.error('saveMenuData failed:', putRes.status, errBody);
+    }
     return putRes.ok;
   } catch (err) {
     console.error(err);
@@ -163,38 +239,100 @@ async function saveMenuData(token) {
   }
 }
 
+// نمایش خطای بارگذاری به‌صورت واضح روی صفحه (به‌جای قورت‌دادن بی‌صدا)
+function showLoadError(message) {
+  const box = document.getElementById('loadError');
+  box.classList.remove('hidden');
+  box.innerHTML = `⚠️ ${message}`;
+}
+function hideLoadError() {
+  document.getElementById('loadError').classList.add('hidden');
+}
+
 function loadData() {
   fetch(`menu-data.json?t=${Date.now()}`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status} — فایل menu-data.json پیدا نشد یا در دسترس نیست`);
+      return res.json();
+    })
     .then(data => {
-      menuItems = data || [];
+      if (!Array.isArray(data)) throw new Error('فرمت menu-data.json درست نیست (باید یک آرایه JSON باشد)');
+      menuItems = data;
+      hideLoadError();
       renderList();
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error('loadData error:', err);
       menuItems = [];
+      // رایج‌ترین دلیل: صفحه با دابل‌کلیک (file://) باز شده. باید از یک سرور محلی
+      // یا از طریق GitHub Pages باز شود تا fetch() کار کند.
+      let hint = err.message;
+      if (location.protocol === 'file:') {
+        hint += '<br>احتمالاً صفحه را مستقیم (file://) باز کرده‌اید — این حالت به‌خاطر محدودیت CORS مرورگر کار نمی‌کند. صفحه را از طریق GitHub Pages یا یک سرور محلی (مثلاً VSCode Live Server) باز کنید.';
+      }
+      showLoadError(hint);
       renderList();
     });
 }
 
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+// نمایش آیتم‌ها گروه‌بندی‌شده بر اساس دسته (مثل index.html)
 function renderList() {
   const container = document.getElementById('adminList');
-  container.innerHTML = menuItems.map(item => `
-    <div class="bg-zinc-900 p-5 rounded-3xl flex gap-4">
-      <div class="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-800 flex-shrink-0">
-        ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-5xl">☕</div>`}
+
+  const catsToShow = activeFilter === 'all' ? CATEGORIES : CATEGORIES.filter(c => c.id === activeFilter);
+  const totalCount = activeFilter === 'all' ? menuItems.length : menuItems.filter(i => i.category === activeFilter).length;
+  document.getElementById('itemCount').innerText = totalCount;
+
+  if (menuItems.length === 0) {
+    container.innerHTML = `<div class="text-center text-zinc-500 py-8">هیچ آیتمی بارگذاری نشد.</div>`;
+    return;
+  }
+
+  const sections = catsToShow.map((cat, idx) => {
+    const catItems = menuItems.filter(i => i.category === cat.id);
+    if (catItems.length === 0 && activeFilter === 'all') return '';
+
+    if (!(cat.id in categoryOpenState)) categoryOpenState[cat.id] = idx === 0;
+    const isOpen = activeFilter !== 'all' ? true : categoryOpenState[cat.id];
+
+    const itemsHtml = catItems.map(item => `
+      <div class="bg-zinc-900 p-5 rounded-3xl flex gap-4">
+        <div class="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-800 flex-shrink-0">
+          ${item.image ? `<img src="${escapeHtml(item.image)}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">${cat.emoji}</div>`}
+        </div>
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(item.name)}</div>
+          <div class="text-sm text-zinc-400">${escapeHtml(item.desc || '')}</div>
+          <div class="text-amber-400">${escapeHtml(item.price)}</div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button onclick="editItem(${item.id})" class="text-blue-400">ویرایش</button>
+          <button onclick="deleteItem(${item.id})" class="text-red-400">حذف</button>
+        </div>
       </div>
-      <div class="flex-1">
-        <div class="font-bold">${item.name}</div>
-        <div class="text-sm text-zinc-400">${item.desc || ''}</div>
-        <div class="text-amber-400">${item.price}</div>
-        <div class="text-xs text-zinc-500">دسته: ${item.category}</div>
+    `).join('');
+
+    return `
+      <div class="bg-zinc-900/50 rounded-3xl overflow-hidden border border-zinc-800">
+        <button type="button" onclick="toggleCategory('${cat.id}')" class="w-full flex items-center justify-between p-5 text-right">
+          <span class="text-lg font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-chevron-${isOpen ? 'down' : 'left'} text-zinc-500 text-sm"></i>
+            ${cat.emoji} ${escapeHtml(cat.label)} <span class="text-zinc-500 text-sm">(${catItems.length})</span>
+          </span>
+          <span onclick="event.stopPropagation(); startAddItemInCategory('${cat.id}')" class="text-sm bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-full">➕ افزودن آیتم</span>
+        </button>
+        ${isOpen ? `<div class="p-5 pt-0 space-y-4">${itemsHtml || `<div class="text-center text-zinc-500 py-4">آیتمی در این دسته نیست</div>`}</div>` : ''}
       </div>
-      <div class="flex flex-col gap-2">
-        <button onclick="editItem(${item.id})" class="text-blue-400">ویرایش</button>
-        <button onclick="deleteItem(${item.id})" class="text-red-400">حذف</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  container.innerHTML = sections || `<div class="text-center text-zinc-500 py-8">آیتمی در این دسته نیست</div>`;
 }
 
 function editItem(id) {
@@ -205,6 +343,15 @@ function editItem(id) {
     document.getElementById('price').value = item.price;
     document.getElementById('category').value = item.category;
     document.getElementById('desc').value = item.desc || '';
+    document.getElementById('formTitle').innerText = 'ویرایش آیتم';
+    document.getElementById('cancelBtn').classList.remove('hidden');
+    if (item.image) {
+      document.getElementById('previewImg').src = item.image;
+      document.getElementById('preview').classList.remove('hidden');
+    } else {
+      document.getElementById('preview').classList.add('hidden');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
@@ -218,6 +365,7 @@ function deleteItem(id) {
   }
 }
 
+renderFilterBar();
 loadData();
 </script>
 </body>
